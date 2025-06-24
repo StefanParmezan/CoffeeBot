@@ -12,4 +12,4 @@ target/
 *.iml
 *.ipr
 
-src/main/java/org/StefanParmezan/TOKEN
+src/main/resources/bot_token
