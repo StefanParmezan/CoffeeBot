@@ -16,10 +16,18 @@ public class CoffeeBot extends TelegramLongPollingBot {
 
             switch(message) {
                 case "/start" -> {
-                    sendMessage(chatId, "Привет это бот для заказа кофе, кофейни CheeseCoffee \uD83E\uDDC0\n/menu - меню напитков\nЖелаем приятного аппетита!");
+                    sendMessage(chatId, "Привет это бот для заказа кофе, кофейни CheeseCoffee \uD83E\uDDC0\n" +
+                            "/menu - меню напитков\n" +
+                            "/buy - купить напиток\n" +
+                            "Желаем приятного аппетита!\n");
+
                 }
                 case "/menu" -> {
                     sendMessage(chatId, Drinks.getDrinksToString());
+                }
+                case "/buy" -> {
+                    sendMessage(chatId, "Напиши txt файл в таком формате\nLatte=3\nMocha=1+Cheese\nИ отправляй его сюда, я напишу тебе итоговую цену");
+
                 }
 
 

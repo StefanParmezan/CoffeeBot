@@ -13,7 +13,8 @@ public enum Drinks {
     FLAT_WHITE(220),
     RAF(260),
     COCOA_LATTE(280),
-    GLACE(270);
+    GLACE(270),
+    CHEESE(40);
 
     int price;
     Drinks(int price) {
@@ -37,7 +38,7 @@ public enum Drinks {
         StringBuilder result = new StringBuilder();
         result.append("CoffeeMenu ☕\n\n");
         for(Drinks drink : Drinks.values()){
-            result.append(drink.toString()).append(": ").append(drink.getPrice() + " руб.");
+            result.append(drink.toString().toLowerCase()).append(": ").append(drink.getPrice() + " руб.");
             result.append("\n");
         }
         return result.toString();
