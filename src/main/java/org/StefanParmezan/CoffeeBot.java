@@ -1,4 +1,5 @@
 package org.StefanParmezan;
+import org.StefanParmezan.Models.Drinks;
 import org.StefanParmezan.Services.FileReadService;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -14,7 +15,14 @@ public class CoffeeBot extends TelegramLongPollingBot {
             String text = update.getMessage().getText();
 
             switch(message) {
-                case "/start" -> sendMessage(chatId, "Привет это бот для заказа кофе, кофейни CheeseCoffee \uD83E\uDDC0\n/menu - меню напитков\nЖелаем приятного аппетита!");
+                case "/start" -> {
+                    sendMessage(chatId, "Привет это бот для заказа кофе, кофейни CheeseCoffee \uD83E\uDDC0\n/menu - меню напитков\nЖелаем приятного аппетита!");
+                }
+                case "/menu" -> {
+                    sendMessage(chatId, Drinks.getDrinksToString());
+                }
+
+
 
             }
         }
