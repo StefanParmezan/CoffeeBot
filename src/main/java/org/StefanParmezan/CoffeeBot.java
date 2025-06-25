@@ -26,8 +26,23 @@ public class CoffeeBot extends TelegramLongPollingBot {
                     sendMessage(chatId, Drinks.getDrinksToString());
                 }
                 case "/buy" -> {
-                    sendMessage(chatId, "Напиши txt файл в таком формате\nLatte=3\nMocha=1+Cheese\nИ отправляй его сюда, я напишу тебе итоговую цену");
-
+                    sendMessage(chatId, "Вы хотите взять кофе здесь или с собой?");
+                    if(message.contains("здесь")){
+                        sendMessage(chatId, "Напиши txt файл в таком формате\n" +
+                                "Latte=3\n" +
+                                "Mocha=1+Cheese\n" +
+                                "И отправляй его сюда, я напишу тебе итоговую цену в виде сообщения");
+                    }
+                    else if(message.contains("с собой")){
+                        sendMessage(chatId, "Напиши txt файл в таком формате\n" +
+                                "Latte=3\n" +
+                                "Mocha=1+Cheese\n" +
+                                "И отправляй его сюда, я напишу тебе итоговую цену в виде .txt файла");
+                    }
+                    else{
+                        sendMessage(chatId, "Не понял тебя \uD83D\uDE05\n" +
+                                "еще раз напиши ты будешь здесь или с собой?");
+                    }
                 }
 
 
