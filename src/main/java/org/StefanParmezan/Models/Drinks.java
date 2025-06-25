@@ -25,9 +25,15 @@ public enum Drinks {
     public int getPrice() {
         return price;
     }
+
     public void setPrice(int price) {
         this.price = price;
     }
+
+    public static int getPrice(String drinkName) {
+        return Drinks.valueOf(drinkName).getPrice();
+    }
+
 
     public Drinks addCheese(Drinks drink) {
         drink.setPrice(drink.getPrice() + 40);
