@@ -31,13 +31,12 @@ public enum Drinks {
     }
 
     public static int getPrice(String drinkName) {
-        return Drinks.valueOf(drinkName).getPrice();
-    }
-
-
-    public Drinks addCheese(Drinks drink) {
-        drink.setPrice(drink.getPrice() + 40);
-        return drink;
+        try {
+            return Drinks.valueOf(drinkName).getPrice();
+        } catch (IllegalArgumentException e) {
+            System.err.println("Неизвестный напиток: " + drinkName);
+            return 0;
+        }
     }
 
     public static String getDrinksToString(){

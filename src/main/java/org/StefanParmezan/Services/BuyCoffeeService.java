@@ -21,7 +21,7 @@ public class BuyCoffeeService {
         String line;
         int totalPrice = 0;
         while((line = reader.readLine()) != null) {
-            totalPrice = processLine(line);
+            totalPrice += processLine(line);
         }
         return totalPrice;
     }
