@@ -13,4 +13,4 @@ target/
 *.ipr
 
 src/main/resources/bot_token
-src/main/resources/Заказ.txt
+src/main/resources/orders/

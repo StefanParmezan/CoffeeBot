@@ -1,15 +1,12 @@
 package org.StefanParmezan.Models;
 
-import java.util.Map;
-import java.util.TreeMap;
-
 public enum Drinks {
     LATTE(240),
     ESPRESSO(130),
     AMERICANO(150),
     CAPPUCCINO(180),
     MACCHIATO(200),
-    MOCHA(250),
+    MATCHA(250),
     FLAT_WHITE(220),
     RAF(260),
     COCOA_LATTE(280),

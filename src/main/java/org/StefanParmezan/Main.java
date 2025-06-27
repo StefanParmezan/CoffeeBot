@@ -26,7 +26,7 @@ public class Main {
         }
         InputStream file = null;
         try {
-            file = new FileInputStream("C:\\Users\\StefanParmezan\\Desktop\\Home\\Programming\\CoffeeBot\\src\\main\\resources\\Заказ.txt");
+            file = new FileInputStream("C:\\Users\\StefanParmezan\\Desktop\\Home\\Programming\\CoffeeBot\\src\\main\\resources\\orders\\Заказ.txt");
         } catch (Exception e) {
             e.printStackTrace();
         }

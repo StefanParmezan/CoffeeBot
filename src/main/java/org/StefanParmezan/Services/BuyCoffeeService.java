@@ -2,10 +2,7 @@ package org.StefanParmezan.Services;
 
 import org.StefanParmezan.Models.Drinks;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 
 public class BuyCoffeeService {
     public static BuyCoffeeService instance = new  BuyCoffeeService();
@@ -43,7 +40,7 @@ public class BuyCoffeeService {
             total += 40 * quantity; // цена за добавку
         }
 
-        System.out.println("total: " + total);
+        System.out.println("total in line " + line + " = " + total);
         return total;
     }
 
