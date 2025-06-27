@@ -39,10 +39,11 @@ public class BuyCoffeeService {
         boolean hasExtra = subParts.length > 1;
 
         int total = Drinks.getPrice(drinkName) * quantity;
-        System.out.println("total " + total);
         if (hasExtra) {
             total += 40 * quantity; // цена за добавку
         }
+
+        System.out.println("total: " + total);
         return total;
     }
 

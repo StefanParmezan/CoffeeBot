@@ -27,7 +27,7 @@ public class CoffeeBot extends TelegramLongPollingBot {
                 case "/menu" -> {
                     sendMessage(chatId, Drinks.getDrinksToString());
                 }
-                case "/buy" -> {
+                /*case "/buy" -> {
                     sendMessage(chatId, "Вы хотите взять кофе здесь или с собой?");
                     if(userInput.equalsIgnoreCase("с собой")){
                         sendMessage(chatId, """
@@ -48,7 +48,7 @@ public class CoffeeBot extends TelegramLongPollingBot {
                                 Не понял тебя \uD83D\uDE05
                                 еще раз напиши ты будешь здесь или с собой?""");
                     }
-                }
+                }*/
 
 
 
