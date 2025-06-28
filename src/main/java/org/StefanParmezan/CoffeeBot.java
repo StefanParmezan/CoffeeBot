@@ -5,7 +5,7 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
-import java.io.InputStream;
+import java.io.*;
 
 public class CoffeeBot extends TelegramLongPollingBot {
 
@@ -69,8 +69,30 @@ public class CoffeeBot extends TelegramLongPollingBot {
             e.printStackTrace();
         }
     }
-    protected InputStream userFIle() {
+    protected void saveUserFIle(InputStream inputStream, Long chatId) {
+        String basePath = "C:\\Users\\StefanParmezan\\Desktop\\Home\\Programming\\CoffeeBot\\src\\main\\resources\\orders";
+        File directory = new File(basePath);
 
+        if (!directory.exists()) {
+            directory.mkdirs(); // создаём папку, если её нет
+        }
+        String fileName = "order_" + chatId + "_" + System.currentTimeMillis() + ".txt";
+        File outputFile = new File(directory, fileName);
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+             BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                writer.write(line);
+                writer.newLine();
+            }
+
+            System.out.println("Файл успешно сохранён: " + outputFile.getAbsolutePath());
+
+        } catch (IOException e) {
+            System.err.println("Ошибка при сохранении файла: " + e.getMessage());
+        }
     }
 
 
