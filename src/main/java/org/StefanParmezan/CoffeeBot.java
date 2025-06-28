@@ -5,6 +5,8 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
+import java.io.InputStream;
+
 public class CoffeeBot extends TelegramLongPollingBot {
 
     @Override
@@ -66,6 +68,9 @@ public class CoffeeBot extends TelegramLongPollingBot {
         } catch (Exception e){
             e.printStackTrace();
         }
+    }
+    protected InputStream userFIle() {
+
     }
 
 
