@@ -50,8 +50,7 @@ public class CoffeeBot extends TelegramLongPollingBot {
                         sendMessage(chatId, "Напишите 'здесь' или 'с собой'");
                     }
 
-                    userStates.remove(chatId); // Очищаем состояние
-                    return;
+                    return; // выходим, чтобы не обрабатывать другие команды
                 }
             }
 
@@ -85,25 +84,26 @@ public class CoffeeBot extends TelegramLongPollingBot {
             if (state == UserState.AWAITING_ORDER_FILE_HERE || state == UserState.AWAITING_ORDER_FILE_TO_GO) {
                 try {
                     String fileId = update.getMessage().getDocument().getFileId();
+
+                    System.out.println("Полученный файл: " + update.getMessage().getDocument().getFileName());
+                    System.out.println("fileId: " + fileId);
                     InputStream fileStream = super.downloadFileAsStream(fileId);
 
                     // Сохраняем файл локально
                     saveUserFIle(fileStream, chatId);
 
-                    // Перечитываем файл, чтобы CalculatePrice(...) работал корректно
+                    // Перечитываем поток заново для подсчёта цены
                     fileStream = super.downloadFileAsStream(fileId);
-
                     int totalCost = buyCoffeeService.CalculatePrice(fileStream);
 
                     if (state == UserState.AWAITING_ORDER_FILE_HERE) {
                         sendMessage(chatId, "Итого: " + totalCost + " ₽\nПриятного кофе!");
-
                     } else if (state == UserState.AWAITING_ORDER_FILE_TO_GO) {
-                        File receiptFile = createReceiptFile(chatId, totalCost);
+                        java.io.File receiptFile = createLocalReceiptFile(chatId, totalCost);
                         sendDocument(chatId, receiptFile);
                     }
 
-                    userStates.remove(chatId); // Сбрасываем состояние
+                    userStates.remove(chatId); // очищаем состояние
 
                 } catch (Exception e) {
                     sendMessage(chatId, "Ошибка при обработке файла.");
@@ -125,7 +125,7 @@ public class CoffeeBot extends TelegramLongPollingBot {
         }
     }
 
-    protected void sendDocument(Long chatId, File file) {
+    protected void sendDocument(Long chatId, java.io.File file) {
         SendDocument sendDocument = new SendDocument();
         sendDocument.setChatId(chatId.toString());
 
@@ -137,9 +137,9 @@ public class CoffeeBot extends TelegramLongPollingBot {
         }
     }
 
-    private File createReceiptFile(Long chatId, int totalCost) {
+    private java.io.File createLocalReceiptFile(Long chatId, int totalCost) {
         try {
-            File tempFile = java.io.File.createTempFile("receipt_" + chatId, ".txt");
+            java.io.File tempFile = java.io.File.createTempFile("receipt_" + chatId, ".txt");
 
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
                 writer.write("☕ Чек CoffeeBot");
@@ -161,14 +161,14 @@ public class CoffeeBot extends TelegramLongPollingBot {
 
     public void saveUserFIle(InputStream inputStream, Long chatId) {
         String basePath = "C:\\Users\\StefanParmezan\\Desktop\\Home\\Programming\\CoffeeBot\\src\\main\\resources\\orders";
-        File directory = new File(basePath);
+        java.io.File directory = new java.io.File(basePath);
 
         if (!directory.exists()) {
-            directory.mkdirs(); // создаём папку, если её нет [[3]]
+            directory.mkdirs(); // создаём папку, если её нет
         }
 
         String fileName = "order_" + chatId + "_" + System.currentTimeMillis() + ".txt";
-        File outputFile = new File(directory, fileName);
+        java.io.File outputFile = new java.io.File(directory, fileName);
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
              BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
