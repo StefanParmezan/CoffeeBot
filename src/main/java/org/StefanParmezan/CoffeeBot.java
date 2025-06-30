@@ -4,6 +4,9 @@ import org.StefanParmezan.Services.FileReadService;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import org.StefanParmezan.Services.BuyCoffeeService;
+
 
 import java.io.*;
 
@@ -29,28 +32,20 @@ public class CoffeeBot extends TelegramLongPollingBot {
                 case "/menu" -> {
                     sendMessage(chatId, Drinks.getDrinksToString());
                 }
-                /*case "/buy" -> {
-                    sendMessage(chatId, "Вы хотите взять кофе здесь или с собой?");
-                    if(userInput.equalsIgnoreCase("с собой")){
+                case "/buy" -> {
                         sendMessage(chatId, """
                                 Напиши txt файл в таком формате
                                 Latte=3
                                 Mocha=1+Cheese
                                 И отправляй его сюда, я напишу тебе итоговую цену в виде сообщения""");
+                    try {
+                        sendMessage(chatId, "Результат: " + getFileFromUser(chatId, update));
+                    } catch (TelegramApiException e) {
+                        throw new RuntimeException(e);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     }
-                    else if(message.contains("с собой")){
-                        sendMessage(chatId, """
-                                Напиши txt файл в таком формате
-                                Latte=3
-                                Mocha=1+Cheese
-                                И отправляй его сюда, я напишу тебе итоговую цену в виде .txt файла""");
-                    }
-                    else{
-                        sendMessage(chatId, """
-                                Не понял тебя \uD83D\uDE05
-                                еще раз напиши ты будешь здесь или с собой?""");
-                    }
-                }*/
+                }
 
 
 
@@ -69,7 +64,7 @@ public class CoffeeBot extends TelegramLongPollingBot {
             e.printStackTrace();
         }
     }
-    protected void saveUserFIle(InputStream inputStream, Long chatId) {
+    public void saveUserFIle(InputStream inputStream, Long chatId) {
         String basePath = "C:\\Users\\StefanParmezan\\Desktop\\Home\\Programming\\CoffeeBot\\src\\main\\resources\\orders";
         File directory = new File(basePath);
 
@@ -94,6 +89,18 @@ public class CoffeeBot extends TelegramLongPollingBot {
             System.err.println("Ошибка при сохранении файла: " + e.getMessage());
         }
     }
+
+    public int getFileFromUser(Long chatId, Update update) throws TelegramApiException, IOException {
+        if (update.hasMessage() && update.getMessage().hasDocument()) {
+            String fileId = update.getMessage().getDocument().getFileId();
+            InputStream fileStream = super.downloadFileAsStream(fileId);
+            int totalCost = BuyCoffeeService.getInstance().CalculatePrice(fileStream);
+            saveUserFIle(fileStream, chatId);
+            return totalCost;
+        }
+        return 0;
+    }
+
 
 
 

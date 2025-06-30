@@ -24,13 +24,6 @@ public class Main {
             System.out.println("Bot starting failed!");
             e.printStackTrace();
         }
-        InputStream file = null;
-        try {
-            file = new FileInputStream("C:\\Users\\StefanParmezan\\Desktop\\Home\\Programming\\CoffeeBot\\src\\main\\resources\\orders\\Заказ.txt");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        System.out.println(BuyCoffeeService.getInstance().CalculatePrice(file));
 
     }
 }
