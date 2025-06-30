@@ -1,114 +1,172 @@
 package org.StefanParmezan;
+
 import org.StefanParmezan.Models.Drinks;
 import org.StefanParmezan.Models.UserState;
+import org.StefanParmezan.Services.BuyCoffeeService;
 import org.StefanParmezan.Services.FileReadService;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.StefanParmezan.Services.BuyCoffeeService;
-
 
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
 public class CoffeeBot extends TelegramLongPollingBot {
+
     private final Map<Long, UserState> userStates = new HashMap<>();
+    private final BuyCoffeeService buyCoffeeService = BuyCoffeeService.getInstance();
 
     @Override
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
-            String message = update.getMessage().getText();
             Long chatId = update.getMessage().getChatId();
-            String text = update.getMessage().getText();
-            if (update.hasMessage() && update.getMessage().hasText()) {
-                String messageText = update.getMessage().getText();
+            String messageText = update.getMessage().getText();
 
-                if (userStates.containsKey(chatId)) {
-                    UserState state = userStates.get(chatId);
+            // 1. Проверяем, ожидаем ли мы ответ от пользователя
+            if (userStates.containsKey(chatId)) {
+                UserState state = userStates.get(chatId);
 
-                    if (state == UserState.AWAITING_LOCATION) {
-                        if (messageText.equalsIgnoreCase("здесь")) {
-                            sendMessage(chatId, """
-                        Отправьте .txt файл с заказом.
-                        Формат:
-                        Latte=2
-                        Mocha=1+Cheese""");
-                            userStates.put(chatId, UserState.AWAITING_ORDER_FILE_HERE);
+                if (state == UserState.AWAITING_LOCATION) {
+                    if (messageText.equalsIgnoreCase("здесь")) {
+                        sendMessage(chatId, """
+                                Отправьте .txt файл с заказом.
+                                Формат:
+                                Latte=2
+                                Mocha=1+Cheese""");
+                        userStates.put(chatId, UserState.AWAITING_ORDER_FILE_HERE);
 
-                        } else if (messageText.equalsIgnoreCase("с собой")) {
-                            sendMessage(chatId, """
-                        Отправьте .txt файл с заказом.
-                        Формат:
-                        Latte=2
-                        Mocha=1+Cheese""");
-                            userStates.put(chatId, UserState.AWAITING_ORDER_FILE_TO_GO);
-
-                        } else {
-                            sendMessage(chatId, "Напишите 'здесь' или 'с собой'");
-                        }
-
-                        userStates.remove(chatId); // Очищаем текущее состояние
-                        return; // Выходим из switch
+                    } else if (messageText.equalsIgnoreCase("с собой")) {
+                        sendMessage(chatId, """
+                                Отправьте .txt файл с заказом.
+                                Формат:
+                                Latte=2
+                                Mocha=1+Cheese""");
+                        userStates.put(chatId, UserState.AWAITING_ORDER_FILE_TO_GO);
+                    } else {
+                        sendMessage(chatId, "Напишите 'здесь' или 'с собой'");
                     }
+
+                    userStates.remove(chatId); // Очищаем состояние
+                    return;
                 }
             }
 
-            switch(message) {
-                case "/start" -> {
+            // 2. Обработка команд
+            switch (messageText) {
+                case "/start":
                     sendMessage(chatId, """
-                            Привет это бот для заказа кофе, кофейни CheeseCoffee \uD83E\uDDC0
-                            /menu - меню напитков
-                            /buy - купить напиток
-                            Желаем приятного аппетита!
-                            """);
+                            Привет! Это бот для заказа кофе 🧀
+                            /menu — посмотреть меню
+                            /buy — сделать заказ""");
+                    break;
 
-                }
-                case "/menu" -> {
+                case "/menu":
                     sendMessage(chatId, Drinks.getDrinksToString());
-                }
-                case "/buy" -> {
-                        sendMessage(chatId, """
-                                Напиши txt файл в таком формате
-                                Latte=3
-                                Mocha=1+Cheese
-                                И отправляй его сюда, я напишу тебе итоговую цену в виде сообщения""");
-                        userStates.put(chatId, UserState.AWAITING_LOCATION);
+                    break;
 
-                    try {
-                        sendMessage(chatId, "Результат: " + getFileFromUser(chatId, update));
-                    } catch (TelegramApiException e) {
-                        throw new RuntimeException(e);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
+                case "/buy":
+                    sendMessage(chatId, "Вы хотите здесь или с собой?");
+                    userStates.put(chatId, UserState.AWAITING_LOCATION);
+                    break;
+
+                default:
+                    sendMessage(chatId, "Неизвестная команда: " + messageText);
+                    break;
+            }
+
+        } else if (update.hasMessage() && update.getMessage().hasDocument()) {
+            Long chatId = update.getMessage().getChatId();
+            UserState state = userStates.getOrDefault(chatId, UserState.IDLE);
+
+            if (state == UserState.AWAITING_ORDER_FILE_HERE || state == UserState.AWAITING_ORDER_FILE_TO_GO) {
+                try {
+                    String fileId = update.getMessage().getDocument().getFileId();
+                    InputStream fileStream = super.downloadFileAsStream(fileId);
+
+                    // Сохраняем файл локально
+                    saveUserFIle(fileStream, chatId);
+
+                    // Перечитываем файл, чтобы CalculatePrice(...) работал корректно
+                    fileStream = super.downloadFileAsStream(fileId);
+
+                    int totalCost = buyCoffeeService.CalculatePrice(fileStream);
+
+                    if (state == UserState.AWAITING_ORDER_FILE_HERE) {
+                        sendMessage(chatId, "Итого: " + totalCost + " ₽\nПриятного кофе!");
+
+                    } else if (state == UserState.AWAITING_ORDER_FILE_TO_GO) {
+                        File receiptFile = createReceiptFile(chatId, totalCost);
+                        sendDocument(chatId, receiptFile);
                     }
+
+                    userStates.remove(chatId); // Сбрасываем состояние
+
+                } catch (Exception e) {
+                    sendMessage(chatId, "Ошибка при обработке файла.");
+                    e.printStackTrace();
                 }
-
-
-
             }
         }
     }
 
-    protected void sendMessage(Long chatId, String text){
+    protected void sendMessage(Long chatId, String text) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.setChatId(chatId.toString());
         sendMessage.setText(text);
 
-        try{
+        try {
             execute(sendMessage);
-        } catch (Exception e){
+        } catch (TelegramApiException e) {
             e.printStackTrace();
         }
     }
+
+    protected void sendDocument(Long chatId, File file) {
+        SendDocument sendDocument = new SendDocument();
+        sendDocument.setChatId(chatId.toString());
+
+        try {
+            sendDocument.setDocument(new InputFile(new FileInputStream(file), file.getName()));
+            execute(sendDocument);
+        } catch (TelegramApiException | FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private File createReceiptFile(Long chatId, int totalCost) {
+        try {
+            File tempFile = java.io.File.createTempFile("receipt_" + chatId, ".txt");
+
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
+                writer.write("☕ Чек CoffeeBot");
+                writer.newLine();
+                writer.write("--------------------");
+                writer.newLine();
+                writer.write("Итого: " + totalCost + " ₽");
+                writer.newLine();
+                writer.write("Спасибо за заказ!");
+            }
+
+            return tempFile;
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public void saveUserFIle(InputStream inputStream, Long chatId) {
         String basePath = "C:\\Users\\StefanParmezan\\Desktop\\Home\\Programming\\CoffeeBot\\src\\main\\resources\\orders";
         File directory = new File(basePath);
 
         if (!directory.exists()) {
-            directory.mkdirs(); // создаём папку, если её нет
+            directory.mkdirs(); // создаём папку, если её нет [[3]]
         }
+
         String fileName = "order_" + chatId + "_" + System.currentTimeMillis() + ".txt";
         File outputFile = new File(directory, fileName);
 
@@ -121,40 +179,12 @@ public class CoffeeBot extends TelegramLongPollingBot {
                 writer.newLine();
             }
 
-            System.out.println("Файл успешно сохранён: " + outputFile.getAbsolutePath());
+            System.out.println("Файл сохранён: " + outputFile.getAbsolutePath());
 
         } catch (IOException e) {
             System.err.println("Ошибка при сохранении файла: " + e.getMessage());
         }
     }
-
-    public int getFileFromUser(Long chatId, Update update) throws TelegramApiException, IOException {
-        if (update.hasMessage() && update.getMessage().hasDocument()) {
-
-            // Теперь файл точно есть
-            if (userStates.containsKey(chatId)) {
-                String state = userStates.get(chatId).toString();
-
-                if (state.equalsIgnoreCase("awaiting_order_file")) {
-                    try {
-                        InputStream fileStream = downloadFileAsStream(update.getMessage().getDocument().getFileId());
-                        int totalCost = BuyCoffeeService.getInstance().CalculatePrice(fileStream);
-                        saveUserFIle(fileStream, chatId);
-
-                        sendMessage(chatId, "Итого: " + totalCost + " ₽");
-
-                    } catch (Exception e) {
-                        sendMessage(chatId, "Ошибка при обработке файла.");
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
-    }
-
-
-
-
 
     @Override
     public String getBotUsername() {
@@ -163,6 +193,6 @@ public class CoffeeBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotToken() {
-        return FileReadService.getInstance().readFile("C:\\Users\\StefanParmezan\\Desktop\\Home\\Programming\\CoffeeBot\\src\\main\\resources\\bot_token");
+        return FileReadService.getInstance().readFile("C:\\Users\\StefanParmezan\\Desktop\\Home\\Programming\\CoffeeBot\\src\\main\\resources\\bot_token"); // заменить на чтение из файла
     }
 }
