@@ -5,6 +5,7 @@ import org.StefanParmezan.Models.UserState;
 import org.StefanParmezan.Services.BuyCoffeeService;
 import org.StefanParmezan.Services.FileReadService;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.GetFile;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -12,6 +13,7 @@ import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.*;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -80,33 +82,30 @@ public class CoffeeBot extends TelegramLongPollingBot {
         } else if (update.hasMessage() && update.getMessage().hasDocument()) {
             Long chatId = update.getMessage().getChatId();
             UserState state = userStates.getOrDefault(chatId, UserState.IDLE);
-
             if (state == UserState.AWAITING_ORDER_FILE_HERE || state == UserState.AWAITING_ORDER_FILE_TO_GO) {
                 try {
                     String fileId = update.getMessage().getDocument().getFileId();
 
-                    System.out.println("Полученный файл: " + update.getMessage().getDocument().getFileName());
-                    System.out.println("fileId: " + fileId);
-                    InputStream fileStream = super.downloadFileAsStream(fileId);
+                    // Получаем fileUrl
 
-                    // Сохраняем файл локально
-                    saveUserFIle(fileStream, chatId);
+                    org.telegram.telegrambots.meta.api.objects.File telegramFile = execute(new GetFile(fileId));
+                    String fileUrl = telegramFile.getFileUrl(getBotToken());
 
-                    // Перечитываем поток заново для подсчёта цены
-                    fileStream = super.downloadFileAsStream(fileId);
-                    int totalCost = buyCoffeeService.CalculatePrice(fileStream);
+                    // Читаем файл и сразу считаем сумму
+                    try (InputStream fileStream = new URL(fileUrl).openStream()) {
+                        int totalCost = buyCoffeeService.CalculatePrice(fileStream);
 
-                    if (state == UserState.AWAITING_ORDER_FILE_HERE) {
-                        sendMessage(chatId, "Итого: " + totalCost + " ₽\nПриятного кофе!");
-                    } else if (state == UserState.AWAITING_ORDER_FILE_TO_GO) {
-                        java.io.File receiptFile = createLocalReceiptFile(chatId, totalCost);
-                        sendDocument(chatId, receiptFile);
+                        if (state == UserState.AWAITING_ORDER_FILE_HERE) {
+                            sendMessage(chatId, "Итого: " + totalCost + " ₽\nПриятного кофе!");
+                        } else {
+                            java.io.File receiptFile = createLocalReceiptFile(chatId, totalCost);
+                            sendDocument(chatId, receiptFile);
+                        }
                     }
 
-                    userStates.remove(chatId); // очищаем состояние
-
+                    userStates.remove(chatId);
                 } catch (Exception e) {
-                    sendMessage(chatId, "Ошибка при обработке файла.");
+                    sendMessage(chatId, "❌ Ошибка при обработке файла. Попробуйте ещё раз.");
                     e.printStackTrace();
                 }
             }
@@ -139,7 +138,7 @@ public class CoffeeBot extends TelegramLongPollingBot {
 
     private java.io.File createLocalReceiptFile(Long chatId, int totalCost) {
         try {
-            java.io.File tempFile = java.io.File.createTempFile("receipt_" + chatId, ".txt");
+            java.io.File tempFile = java.io.File.createTempFile("Ваш_Чек: " + totalCost, ".txt");
 
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
                 writer.write("☕ Чек CoffeeBot");
