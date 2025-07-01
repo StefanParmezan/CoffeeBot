@@ -11,7 +11,6 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-
 import java.io.*;
 import java.net.URL;
 import java.util.HashMap;
@@ -38,7 +37,7 @@ public class CoffeeBot extends TelegramLongPollingBot {
                                 Отправьте .txt файл с заказом.
                                 Формат:
                                 Latte=2
-                                Mocha=1+Cheese""");
+                                Matcha=1+Cheese""");
                         userStates.put(chatId, UserState.AWAITING_ORDER_FILE_HERE);
 
                     } else if (messageText.equalsIgnoreCase("с собой")) {
@@ -46,7 +45,7 @@ public class CoffeeBot extends TelegramLongPollingBot {
                                 Отправьте .txt файл с заказом.
                                 Формат:
                                 Latte=2
-                                Mocha=1+Cheese""");
+                                Matcha=1+Cheese""");
                         userStates.put(chatId, UserState.AWAITING_ORDER_FILE_TO_GO);
                     } else {
                         sendMessage(chatId, "Напишите 'здесь' или 'с собой'");
