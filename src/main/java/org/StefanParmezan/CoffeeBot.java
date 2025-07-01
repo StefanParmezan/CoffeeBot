@@ -158,33 +158,6 @@ public class CoffeeBot extends TelegramLongPollingBot {
         }
     }
 
-    public void saveUserFIle(InputStream inputStream, Long chatId) {
-        String basePath = "C:\\Users\\StefanParmezan\\Desktop\\Home\\Programming\\CoffeeBot\\src\\main\\resources\\orders";
-        java.io.File directory = new java.io.File(basePath);
-
-        if (!directory.exists()) {
-            directory.mkdirs(); // создаём папку, если её нет
-        }
-
-        String fileName = "order_" + chatId + "_" + System.currentTimeMillis() + ".txt";
-        java.io.File outputFile = new java.io.File(directory, fileName);
-
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
-             BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile))) {
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-                writer.write(line);
-                writer.newLine();
-            }
-
-            System.out.println("Файл сохранён: " + outputFile.getAbsolutePath());
-
-        } catch (IOException e) {
-            System.err.println("Ошибка при сохранении файла: " + e.getMessage());
-        }
-    }
-
     @Override
     public String getBotUsername() {
         return "CoffeeBot";
